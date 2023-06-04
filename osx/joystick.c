@@ -42,7 +42,7 @@ int main(void) {
         CFRelease(hidManager);
         return 1;
     }
-
+    printf("running loop\n");
     // Start the run loop to receive joystick input reports
     CFRunLoopRun();
 
@@ -55,6 +55,7 @@ int main(void) {
 
 //static void __deviceReportCallback(void * context, IOReturn result, void * sender, IOHIDReportType type, uint32_t reportID, uint8_t * report, CFIndex reportLength)
 void handleJoystickInput(void* context, IOReturn result, void* sender, IOHIDReportType type, uint32_t reportID, uint8_t* report, CFIndex reportLength) {
+    printf("handling..\n");
     // Print the received joystick input data
     for (int i = 0; i < reportLength; i++) {
         printf("%02x ", report[i]);
