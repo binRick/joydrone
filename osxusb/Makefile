@@ -3,7 +3,7 @@ pi:
 		-L /usr/lib/arm-linux-gnueabihf \
 		-I /usr/include/libusb-1.0 \
 		-I /usr/include/hidapi \
-		-l libhidapi-libusb \
+		-l hidapi-libusb \
 		-l usb-1.0
 osx:
 	gcc main.c -o joystick \
