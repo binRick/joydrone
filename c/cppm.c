@@ -3,7 +3,7 @@
 
 #define CHANNEL_COUNT 4
 #define FRAME_INTERVAL 20000 // CPPM frame interval (20ms)
-#define SIGNAL_PIN 0 // GPIO pin for CPPM signal output
+#define SIGNAL_PIN 21 // GPIO pin for CPPM signal output
 
 int channelValues[CHANNEL_COUNT] = {1500, 1500, 1500, 1500}; // Initialize channel values to neutral position
 
