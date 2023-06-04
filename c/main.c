@@ -13,6 +13,7 @@
 
 void print_devs(libusb_device **devs);
 int monitor_usb(void);
+int scaleValue(int value);
 
 int main(int argc, const char * argv[]){
     libusb_device **devs;
@@ -37,10 +38,21 @@ int main(int argc, const char * argv[]){
     libusb_free_device_list(devs, 1);
     libusb_exit(NULL);
 
-monitor_usb();
+    monitor_usb();
 
 
     return 0;
+}
+
+
+int scaleValue(int value) {
+    if (value < 0) {
+        value = 0;
+    } else if (value > 255) {
+        value = 255;
+    }
+
+    return (int)((value / 255.0) * 2000);
 }
 
 
@@ -80,7 +92,7 @@ int monitor_usb(void) {
 
     unsigned char buffer[8];
     while (true) {
-	int pitch = 0, yaw = 0, throttle = 0, roll = 0;
+	int pitch = 0, yaw = 0, throttle = 0, roll = 0, button0 = 0;
         int result = hid_read(device, buffer, sizeof(buffer));
         if (result < 0) {
             printf("Error while reading joystick input.\n");
@@ -93,11 +105,12 @@ int monitor_usb(void) {
 		}
 		printf("\n");
 	}
-	throttle = buffer[5];
-	pitch = buffer[1];
-	yaw = buffer[3];
-	roll = buffer[0];
-	printf("{\"pitch\": %d, \"yaw\": %d, \"roll\": %d, \"throttle\": %d}\n",pitch,yaw,roll,throttle); 
+	throttle = scaleValue(buffer[5]);
+	pitch = scaleValue(buffer[1]);
+	yaw = scaleValue(buffer[3]);
+	roll = scaleValue(buffer[0]);
+	button0 = scaleValue(0);
+	printf("{\"pitch\": %d, \"yaw\": %d, \"roll\": %d, \"throttle\": %d,\"button0\": %d}\n",pitch,yaw,roll,throttle,button0); 
     }
 
     hid_close(device);
