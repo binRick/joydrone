@@ -4,7 +4,9 @@
 #include <stdbool.h>
 #include <libusb.h>
 #include <hidapi.h>
-#include <hidapi_darwin.h>
+#if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
+	#include <hidapi_darwin.h>
+#endif
 #define VENDOR_ID 0x046d
 #define PRODUCT_ID 0xc215
 #define DEBUG_JOYSTICK_CHANNELS false
