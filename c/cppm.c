@@ -27,7 +27,7 @@ int main(void) {
 
 void generateCppmSignal() {
     static unsigned long lastChannelUpdate = 0;
-    const int channelPulseLength = 400; // Pulse length for each channel (400 microseconds)
+    const int channelPulseLength = 300; // Pulse length for each channel (400 microseconds)
 
     if (micros() - lastChannelUpdate >= FRAME_INTERVAL) {
         // Generate CPPM frame
@@ -51,7 +51,7 @@ void generateCppmSignal() {
             if (signal[i] == 1) {
                 delayMicroseconds(channelPulseLength);
             } else {
-                delayMicroseconds(channelPulseLength - 400);
+                delayMicroseconds(channelPulseLength - 300);
             }
 
             digitalWrite(SIGNAL_PIN, LOW); // Set CPPM signal low
