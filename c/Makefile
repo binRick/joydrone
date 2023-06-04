@@ -5,6 +5,8 @@ pi:
 		-I /usr/include/hidapi \
 		-l hidapi-libusb \
 		-l usb-1.0
+	gcc cppm.c -o cppm \
+		-l wiringPi
 osx:
 	gcc main.c -o joystick \
 		-L /usr/local/lib \
