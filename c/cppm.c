@@ -1,63 +1,57 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <wiringPi.h>
 
+#define PIN 21
 #define CHANNEL_COUNT 6
-#define FRAME_INTERVAL 22500 // CPPM frame interval (20ms)
-#define SIGNAL_PIN 21 // GPIO pin for CPPM signal output
+#define FRAME_LENGTH_US 22500
+#define MIN_PULSE_WIDTH_US 300
+#define MAX_PULSE_WIDTH_US 2100
 
-int channelValues[CHANNEL_COUNT] = {500, 500, 1500, 1500, 1500, 1500}; // Initialize channel values to neutral position
+int channels[CHANNEL_COUNT] = { 1500, 1500, 1500, 1500, 1500, 1500 };
 
-void generateCppmSignal();
+void updateChannels() {
+    // Generate CPPM signal frame
+    digitalWrite(PIN, HIGH);
+    delayMicroseconds(MIN_PULSE_WIDTH_US);
+
+    for (int i = 0; i < CHANNEL_COUNT; i++) {
+        digitalWrite(PIN, LOW);
+        delayMicroseconds(channels[i]);
+
+        digitalWrite(PIN, HIGH);
+        delayMicroseconds(MAX_PULSE_WIDTH_US - channels[i]);
+    }
+
+    digitalWrite(PIN, LOW);
+    delayMicroseconds(FRAME_LENGTH_US - MAX_PULSE_WIDTH_US);
+}
 
 int main(void) {
     if (wiringPiSetup() == -1) {
-        printf("Failed to initialize WiringPi\n");
+        printf("Failed to initialize wiringPi.\n");
         return 1;
     }
 
-    pinMode(SIGNAL_PIN, OUTPUT); // Set SIGNAL_PIN as output
+    pinMode(PIN, OUTPUT);
+    digitalWrite(PIN, LOW);
 
     while (1) {
-        generateCppmSignal();
-        delayMicroseconds(FRAME_INTERVAL);
+        // Update channel values (modify this part to adjust channel values)
+        channels[0] = 1500;  // Channel 1
+        channels[1] = 1600;  // Channel 2
+        channels[2] = 1700;  // Channel 3
+        channels[3] = 1800;  // Channel 4
+        channels[4] = 1900;  // Channel 5
+        channels[5] = 2000;  // Channel 6
+
+        // Generate CPPM signal frame
+        updateChannels();
+
+        // Delay between frames (modify this value to adjust the CPPM frame rate)
+        delay(20);
     }
 
     return 0;
-}
-
-void generateCppmSignal() {
-    static unsigned long lastChannelUpdate = 0;
-    const int channelPulseLength = 300; // Pulse length for each channel (400 microseconds)
-
-    if (micros() - lastChannelUpdate >= FRAME_INTERVAL) {
-        // Generate CPPM frame
-        int signal[16];
-
-        // Set sync pulse (all channels low)
-        for (int i = 0; i < 16; i++) {
-            signal[i] = 0;
-        }
-
-        // Set channel pulses
-        for (int i = 0; i < CHANNEL_COUNT; i++) {
-            signal[i * 2 + 1] = channelValues[i] / 256; // High byte
-            signal[i * 2 + 2] = channelValues[i] % 256; // Low byte
-        }
-
-        // Output CPPM signal
-        for (int i = 0; i < 16; i++) {
-            digitalWrite(SIGNAL_PIN, HIGH); // Set CPPM signal high
-
-            if (signal[i] == 1) {
-                delayMicroseconds(channelPulseLength);
-            } else {
-                delayMicroseconds(channelPulseLength - 300);
-            }
-
-            digitalWrite(SIGNAL_PIN, LOW); // Set CPPM signal low
-        }
-
-        lastChannelUpdate = micros();
-    }
 }
 
