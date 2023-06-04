@@ -68,6 +68,7 @@ int writeToSerialPort1(const char* portPath, const char* data) {
 }
 
 int main(){
+  sleep(2);
   while(1)
 	writeToSerialPort(PORT, DATA, BAUD);
 	//writeToSerialPort(PORT, DATA);
