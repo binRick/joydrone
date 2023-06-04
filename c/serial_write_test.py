@@ -23,6 +23,7 @@ with serial.Serial() as ser:
   print("serial port ready...")
   while True:
     js_str = json.dumps(js_chans) + '\n'
-    print(f'json to send: {js_str}')
+    print('json to send:')
+    print(js_str)
     ser.write(bytes(js_str,'utf-8'))
     print("sent to serial port")
