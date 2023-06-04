@@ -7,7 +7,7 @@
 #include <termios.h>
 #define PORT "/dev/ttyUSB0"
 #define BAUD 115200
-#define DATA "{\"pitch\": 1898, \"yaw\": 996, \"roll\": 0, \"throttle\": 2000,\"button0\": 0}\n"
+#define DATA "{\"pitch\": 1898, \"yaw\": 996, \"roll\": 0, \"throttle\": 1000,\"button0\": 0}\n"
 
 
 int writeToSerialPort(const char* portPath, const char* data, speed_t baudRate);
