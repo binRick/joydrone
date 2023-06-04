@@ -2,7 +2,7 @@
 import json, serial, time, sys
  
 port = sys.argv[1]
-print(f"Opening port {port}")
+print("Opening port "+str(port))
  
 
 js_chans = {
