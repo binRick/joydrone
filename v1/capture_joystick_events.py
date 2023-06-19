@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import pygame, json, serial, time
+
+DEBUG_EVENTS = True
  
 # Define some colors
 BLACK = (0, 0, 0)
