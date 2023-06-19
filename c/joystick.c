@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <libusb.h>
 #include <hidapi.h>
+#include <unistd.h>
+
 #if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
 	#include <hidapi_darwin.h>
 #endif
@@ -14,6 +16,7 @@
 void print_devs(libusb_device **devs);
 int monitor_usb(void);
 int scaleValue(int value);
+void ensure_root(void);
 
 int main(int argc, const char * argv[]){
     libusb_device **devs;
@@ -32,11 +35,15 @@ int main(int argc, const char * argv[]){
 	exit(1);
     }
 
-    printf("There are %zd devices found\n", list);
-
-    print_devs(devs);
+    if (DEBUG_JOYSTICK_CHANNELS){
+    	printf("There are %zd devices found\n", list);
+    	print_devs(devs);
+    }
+    
     libusb_free_device_list(devs, 1);
     libusb_exit(NULL);
+
+    ensure_root();
 
     monitor_usb();
 
@@ -115,4 +122,10 @@ int monitor_usb(void) {
 
     hid_close(device);
     return 0;
+}
+void ensure_root(void){
+	if (geteuid() != 0) {
+	    fprintf(stderr, "Must be run as root\n");
+	    exit(1);
+	}
 }
