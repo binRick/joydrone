@@ -13,6 +13,10 @@ pi:
 	gcc cppm.c -o cppm \
 		-l wiringPi
 	gcc test_write_serial.c -o test_write_serial
+	gcc write_serial.c \
+		-L /usr/local/lib/aarch64-linux-gnu \
+		-l cserial \
+		-I /usr/local/include -o write_serial
 osx:
 	gcc joystick.c -o joystick \
 		-L /usr/local/lib \
