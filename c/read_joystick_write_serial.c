@@ -19,7 +19,8 @@ void print_devs(libusb_device **devs);
 int monitor_usb(void);
 int scaleValue(int value);
 void ensure_root(void);
-int write_json_string( char *json_string );
+int write_json_string(char *json_string);
+bool setup_serial_port();
 
 int main(int argc, const char * argv[]){
     libusb_device **devs;
@@ -133,7 +134,7 @@ void ensure_root(void){
 	}
 }
 
-int write_json_string( char *json_string ){
+bool setup_serial_port(){
     c_serial_port_t* m_port;
     c_serial_control_lines_t m_lines;
     int status, bytes_read, data_length, x;
@@ -177,6 +178,10 @@ int write_json_string( char *json_string ){
         fprintf( stderr, "ERROR: Can't open serial port\n" );
         return 1;
     }
+}
+
+int write_json_string( char *json_string ){
+
 
     do{
 	char *s = "{\"pitch\": 15, \"yaw\": 996, \"roll\": 0, \"throttle\": 2000,\"button0\": 0}";
