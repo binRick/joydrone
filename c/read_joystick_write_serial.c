@@ -9,7 +9,7 @@
 #include <cserial/c_serial.h>
 
 #if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
-	#include <hidapi_darwin.h>
+  #include <hidapi_darwin.h>
 #endif
 #define VENDOR_ID 0x046d
 #define PRODUCT_ID 0xc215
@@ -17,17 +17,38 @@
 
 void print_devs(libusb_device **devs);
 int monitor_usb(void);
-int scaleValue(int value);
+int scale_value(int value);
 void ensure_root(void);
 int write_json_string(char *json_string);
 bool setup_serial_port();
+
+c_serial_port_t* m_port;
+c_serial_control_lines_t m_lines;
+int status, bytes_read, data_length, x;
 
 int main(int argc, const char * argv[]){
     libusb_device **devs;
     libusb_context *context = NULL;
 
     size_t list;
-    int ret;
+    int ret, x;
+
+    if( argc != 2 ){
+        fprintf( stderr, "ERROR: First argument must be serial port\n" );
+		const char** port_list = c_serial_get_serial_ports_list();
+		x = 0;
+		printf("Available ports:\n");
+		while( port_list[ x ] != NULL ){
+			printf( "%s\n", port_list[ x ] );
+			x++;
+		}
+		c_serial_free_serial_ports_list( port_list );
+        return 1;
+    }
+    if( c_serial_set_port_name( m_port, argv[ 1 ] ) < 0 ){
+        fprintf( stderr, "ERROR: can't set port name\n" );
+    }
+
 
     if((ret = libusb_init(&context))<0){
         perror("libusb_init");
@@ -43,23 +64,11 @@ int main(int argc, const char * argv[]){
     libusb_exit(NULL);
 
     ensure_root();
-
     monitor_usb();
-
 
     return 0;
 }
 
-
-int scaleValue(int value) {
-    if (value < 0) {
-        value = 0;
-    } else if (value > 255) {
-        value = 255;
-    }
-
-    return (int)((value / 255.0) * 2000);
-}
 
 int monitor_usb(void) {
     hid_device* device = hid_open(VENDOR_ID, PRODUCT_ID, NULL);
@@ -83,11 +92,11 @@ int monitor_usb(void) {
 		}
 		printf("\n");
 	}
-	throttle = scaleValue(buffer[5]);
-	pitch = scaleValue(buffer[1]);
-	yaw = scaleValue(buffer[3]);
-	roll = scaleValue(buffer[0]);
-	button0 = scaleValue(0);
+	throttle = scale_value(buffer[5]);
+	pitch = scale_value(buffer[1]);
+	yaw = scale_value(buffer[3]);
+	roll = scale_value(buffer[0]);
+	button0 = scale_value(0);
 	printf("{\"pitch\": %d, \"yaw\": %d, \"roll\": %d, \"throttle\": %d,\"button0\": %d}\n",pitch,yaw,roll,throttle,button0); 
     }
 
@@ -102,33 +111,15 @@ void ensure_root(void){
 }
 
 bool setup_serial_port(){
-    c_serial_port_t* m_port;
-    c_serial_control_lines_t m_lines;
     int status, bytes_read, data_length, x;
     uint8_t data[ 255 ];
 
-    if( argc != 2 ){
-        fprintf( stderr, "ERROR: First argument must be serial port\n" );
-		const char** port_list = c_serial_get_serial_ports_list();
-		x = 0;
-		printf("Available ports:\n");
-		while( port_list[ x ] != NULL ){
-			printf( "%s\n", port_list[ x ] );
-			x++;
-		}
-		c_serial_free_serial_ports_list( port_list );
-        return 1;
-    }
  
     c_serial_set_global_log_function( c_serial_stderr_log_function );
 
     if( c_serial_new( &m_port, NULL ) < 0 ){
         fprintf( stderr, "ERROR: Unable to create new serial port\n" );
         return 1;
-    }
-
-    if( c_serial_set_port_name( m_port, argv[ 1 ] ) < 0 ){
-        fprintf( stderr, "ERROR: can't set port name\n" );
     }
 
     c_serial_set_baud_rate( m_port, CSERIAL_BAUD_115200 );
@@ -160,3 +151,14 @@ int write_json_string( char *json_string ){
 	printf("wrote %d bytes to port\n",strlen(s));
     }while( 1 );
 }
+
+int scale_value(int value) {
+    if (value < 0) {
+        value = 0;
+    } else if (value > 255) {
+        value = 255;
+    }
+
+    return (int)((value / 255.0) * 2000);
+}
+

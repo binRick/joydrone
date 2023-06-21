@@ -17,6 +17,15 @@ pi:
 		-L /usr/local/lib/aarch64-linux-gnu \
 		-l cserial \
 		-I /usr/local/include -o write_serial
+	gcc read_joystick_write_serial.c \
+		-L /usr/lib/arm-linux-gnueabihf \
+		-I /usr/include/libusb-1.0 \
+		-I /usr/include/hidapi \
+		-l hidapi-libusb \
+		-l usb-1.0 \
+		-L /usr/local/lib/aarch64-linux-gnu \
+		-l cserial \
+		-I /usr/local/include -o read_joystick_write_serial
 osx:
 	gcc joystick.c -o joystick \
 		-L /usr/local/lib \
