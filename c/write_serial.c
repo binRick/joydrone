@@ -5,16 +5,11 @@
 #include <string.h>
 #include <cserial/c_serial.h>
 
-
 int main( int argc, char** argv ){
     c_serial_port_t* m_port;
     c_serial_control_lines_t m_lines;
-    int status;
-    int bytes_read;
+    int status, bytes_read, data_length, x;
     uint8_t data[ 255 ];
-    int data_length;
-    int x;
-
 
     if( argc != 2 ){
         fprintf( stderr, "ERROR: First argument must be serial port\n" );
@@ -55,9 +50,7 @@ int main( int argc, char** argv ){
         return 1;
     }
 
-
     do{
-
 	char *s = "{\"pitch\": 15, \"yaw\": 996, \"roll\": 0, \"throttle\": 2000,\"button0\": 0}";
         status = c_serial_write_data( m_port, s, &data_length);
         if( status < 0 ){
