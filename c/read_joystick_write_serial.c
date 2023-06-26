@@ -6,6 +6,7 @@
 #include <hidapi.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <pthread.h>
 #include <cserial/c_serial.h>
 
 #if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
@@ -14,8 +15,6 @@
 #define VENDOR_ID 0x046d
 #define PRODUCT_ID 0xc215
 #define DEBUG_JOYSTICK_CHANNELS false
-#define CHANNEL_BUFFER_DEPTH 100
-
 
 void print_devs(libusb_device **devs);
 int monitor_usb(void);
@@ -27,9 +26,7 @@ bool setup_serial_port();
 c_serial_port_t* m_port;
 c_serial_control_lines_t m_lines;
 int status, bytes_read, data_length, x;
-chan_t* chan = NULL;
-
-
+ 
 int main(int argc, const char * argv[]){
     libusb_device **devs;
     libusb_context *context = NULL;
@@ -37,8 +34,6 @@ int main(int argc, const char * argv[]){
     size_t list;
     int ret, x;
 	
-    chan = chan_init(CHANNEL_BUFFER_DEPTH);
-
     if( argc != 2 ){
         fprintf( stderr, "ERROR: First argument must be serial port\n" );
 		const char** port_list = c_serial_get_serial_ports_list();
@@ -55,7 +50,6 @@ int main(int argc, const char * argv[]){
         fprintf( stderr, "ERROR: can't set port name\n" );
     }
 
-
     if((ret = libusb_init(&context))<0){
         perror("libusb_init");
         exit(1);
@@ -70,15 +64,13 @@ int main(int argc, const char * argv[]){
     libusb_exit(NULL);
 
     ensure_root();
+    setup_serial_port();
     monitor_usb();
-
-    chan_dispose(chan);
 
     return 0;
 }
 
-
-int monitor_usb(void) {
+int monitor_usb(void *vargp) {
     hid_device* device = hid_open(VENDOR_ID, PRODUCT_ID, NULL);
     if (device == NULL) {
         printf("Failed to open the HID device.\n");
@@ -88,7 +80,7 @@ int monitor_usb(void) {
     unsigned char buffer[8];
     while (true) {
 	int pitch = 0, yaw = 0, throttle = 0, roll = 0, button0 = 0, r = 0;
-	char *buf;
+	char buf[4096];
         int result = hid_read(device, buffer, sizeof(buffer));
         if (result < 0) {
             printf("Error while reading joystick input.\n");
@@ -106,8 +98,8 @@ int monitor_usb(void) {
 	yaw = scale_value(buffer[3]);
 	roll = scale_value(buffer[0]);
 	button0 = scale_value(0);
-	r = asprintf(&buf,"{\"pitch\": %d, \"yaw\": %d, \"roll\": %d, \"throttle\": %d,\"button0\": %d}\n",pitch,yaw,roll,throttle,button0);
-	chan_send(chan, buf);
+	sprintf(&buf,"{\"pitch\": %d, \"yaw\": %d, \"roll\": %d, \"throttle\": %d,\"button0\": %d}\n",pitch,yaw,roll,throttle,button0);
+	write_json_string(buf);
 	    
     }
 
@@ -125,7 +117,6 @@ bool setup_serial_port(){
     int status, bytes_read, data_length, x;
     uint8_t data[ 255 ];
 
- 
     c_serial_set_global_log_function( c_serial_stderr_log_function );
 
     if( c_serial_new( &m_port, NULL ) < 0 ){
@@ -150,17 +141,10 @@ bool setup_serial_port(){
 }
 
 int write_json_string( char *json_string ){
-
-
-    do{
-	char *s = "{\"pitch\": 15, \"yaw\": 996, \"roll\": 0, \"throttle\": 2000,\"button0\": 0}";
-        status = c_serial_write_data( m_port, s, &data_length);
-        if( status < 0 ){
-	    printf("error writing to port\n");
-            break;
-        }
-	printf("wrote %d bytes to port\n",strlen(s));
-    }while( 1 );
+  status = c_serial_write_data( m_port, json_string, &data_length);
+  if( status < 0 )
+    printf("error writing to port\n");
+  printf("wrote %d bytes to port\n",strlen(s));
 }
 
 int scale_value(int value) {
@@ -169,7 +153,5 @@ int scale_value(int value) {
     } else if (value > 255) {
         value = 255;
     }
-
     return (int)((value / 255.0) * 2000);
 }
-
