@@ -17,11 +17,11 @@
 #define DEBUG_JOYSTICK_CHANNELS false
 
 void print_devs(libusb_device **devs);
-int monitor_usb(void);
+void monitor_usb(void);
 int scale_value(int value);
 void ensure_root(void);
 int write_json_string(char *json_string);
-bool setup_serial_port();
+bool setup_serial_port(void);
 
 c_serial_port_t* m_port;
 c_serial_control_lines_t m_lines;
@@ -64,13 +64,16 @@ int main(int argc, const char * argv[]){
     libusb_exit(NULL);
 
     ensure_root();
-    setup_serial_port();
+    if(!setup_serial_port()){
+	printf("Error setting up serial port");
+	return 1;
+    }
     monitor_usb();
 
     return 0;
 }
 
-int monitor_usb(void *vargp) {
+void monitor_usb(void) {
     hid_device* device = hid_open(VENDOR_ID, PRODUCT_ID, NULL);
     if (device == NULL) {
         printf("Failed to open the HID device.\n");
@@ -106,6 +109,7 @@ int monitor_usb(void *vargp) {
     hid_close(device);
     return 0;
 }
+
 void ensure_root(void){
 	if (geteuid() != 0) {
 	    fprintf(stderr, "Must be run as root\n");
@@ -121,7 +125,7 @@ bool setup_serial_port(){
 
     if( c_serial_new( &m_port, NULL ) < 0 ){
         fprintf( stderr, "ERROR: Unable to create new serial port\n" );
-        return 1;
+        return false;
     }
 
     c_serial_set_baud_rate( m_port, CSERIAL_BAUD_115200 );
@@ -136,15 +140,17 @@ bool setup_serial_port(){
     status = c_serial_open( m_port );
     if( status < 0 ){
         fprintf( stderr, "ERROR: Can't open serial port\n" );
-        return 1;
+        return false;
     }
+    return true;
 }
 
 int write_json_string( char *json_string ){
   status = c_serial_write_data( m_port, json_string, &data_length);
   if( status < 0 )
     printf("error writing to port\n");
-  printf("wrote %d bytes to port\n",strlen(s));
+  printf("wrote %d bytes to port\n",strlen(json_string));
+  return(strlen(json_string));
 }
 
 int scale_value(int value) {
