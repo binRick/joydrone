@@ -14,6 +14,8 @@
 #define VENDOR_ID 0x046d
 #define PRODUCT_ID 0xc215
 #define DEBUG_JOYSTICK_CHANNELS false
+#define CHANNEL_BUFFER_DEPTH 100
+
 
 void print_devs(libusb_device **devs);
 int monitor_usb(void);
@@ -25,6 +27,8 @@ bool setup_serial_port();
 c_serial_port_t* m_port;
 c_serial_control_lines_t m_lines;
 int status, bytes_read, data_length, x;
+chan_t* chan = NULL;
+
 
 int main(int argc, const char * argv[]){
     libusb_device **devs;
@@ -32,6 +36,8 @@ int main(int argc, const char * argv[]){
 
     size_t list;
     int ret, x;
+	
+    chan = chan_init(CHANNEL_BUFFER_DEPTH);
 
     if( argc != 2 ){
         fprintf( stderr, "ERROR: First argument must be serial port\n" );
@@ -66,6 +72,8 @@ int main(int argc, const char * argv[]){
     ensure_root();
     monitor_usb();
 
+    chan_dispose(chan);
+
     return 0;
 }
 
@@ -79,7 +87,8 @@ int monitor_usb(void) {
 
     unsigned char buffer[8];
     while (true) {
-	int pitch = 0, yaw = 0, throttle = 0, roll = 0, button0 = 0;
+	int pitch = 0, yaw = 0, throttle = 0, roll = 0, button0 = 0, r = 0;
+	char *buf;
         int result = hid_read(device, buffer, sizeof(buffer));
         if (result < 0) {
             printf("Error while reading joystick input.\n");
@@ -97,7 +106,9 @@ int monitor_usb(void) {
 	yaw = scale_value(buffer[3]);
 	roll = scale_value(buffer[0]);
 	button0 = scale_value(0);
-	printf("{\"pitch\": %d, \"yaw\": %d, \"roll\": %d, \"throttle\": %d,\"button0\": %d}\n",pitch,yaw,roll,throttle,button0); 
+	r = asprintf(&buf,"{\"pitch\": %d, \"yaw\": %d, \"roll\": %d, \"throttle\": %d,\"button0\": %d}\n",pitch,yaw,roll,throttle,button0);
+	chan_send(chan, buf);
+	    
     }
 
     hid_close(device);
