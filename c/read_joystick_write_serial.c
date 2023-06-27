@@ -7,11 +7,11 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <pthread.h>
-#include <cserial/c_serial.h>
-
 #if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
-  #include <hidapi_darwin.h>
+ #include <hidapi_darwin.h>
 #endif
+#include "arduinoserialposix.h"
+
 #define VENDOR_ID 0x046d
 #define PRODUCT_ID 0xc215
 #define DEBUG_JOYSTICK_CHANNELS false
@@ -23,9 +23,10 @@ void ensure_root(void);
 int write_json_string(char *json_string);
 bool setup_serial_port(void);
 
-c_serial_port_t* m_port;
-c_serial_control_lines_t m_lines;
+//c_serial_port_t* m_port;
+//c_serial_control_lines_t m_lines;
 int status, bytes_read, data_length, x;
+char serial_port[1024];
  
 int main(int argc, const char * argv[]){
     libusb_device **devs;
@@ -36,19 +37,10 @@ int main(int argc, const char * argv[]){
 	
     if( argc != 2 ){
         fprintf( stderr, "ERROR: First argument must be serial port\n" );
-		const char** port_list = c_serial_get_serial_ports_list();
-		x = 0;
-		printf("Available ports:\n");
-		while( port_list[ x ] != NULL ){
-			printf( "%s\n", port_list[ x ] );
-			x++;
-		}
-		c_serial_free_serial_ports_list( port_list );
         return 1;
     }
-    if( c_serial_set_port_name( m_port, argv[ 1 ] ) < 0 ){
-        fprintf( stderr, "ERROR: can't set port name\n" );
-    }
+    sprintf(&serial_port,argv[1]);
+    printf("Using serial port %s\n",serial_port);
 
     if((ret = libusb_init(&context))<0){
         perror("libusb_init");
@@ -116,40 +108,36 @@ void ensure_root(void){
 	    exit(1);
 	}
 }
+int fd = 0;
 
 bool setup_serial_port(){
-    int status, bytes_read, data_length, x;
-    uint8_t data[ 255 ];
 
-    c_serial_set_global_log_function( c_serial_stderr_log_function );
+    char serialport[256];
+    int baudrate = B115200;  // default
+    char buf[256];
+    int rc,n;
 
-    if( c_serial_new( &m_port, NULL ) < 0 ){
-        fprintf( stderr, "ERROR: Unable to create new serial port\n" );
-        return false;
-    }
+char *s = "{\"pitch\": 1984, \"yaw\": 925, \"roll\": 1200, \"throttle\": 1500,\"button0\": 0}\n";
 
-    c_serial_set_baud_rate( m_port, CSERIAL_BAUD_115200 );
-    c_serial_set_data_bits( m_port, CSERIAL_BITS_8 );
-    c_serial_set_stop_bits( m_port, CSERIAL_STOP_BITS_1 );
-    c_serial_set_parity( m_port, CSERIAL_PARITY_NONE );
-    c_serial_set_flow_control( m_port, CSERIAL_FLOW_NONE );
+    fd = serialport_init(serial_port, baudrate);
+    if(fd==-1) return -1;
+    printf("enabling serial port\n");
+    delay(2000);
+    printf("serial port ready\n");
 
-    printf( "Baud rate is %d\n", c_serial_get_baud_rate( m_port ) );
-    c_serial_set_serial_line_change_flags( m_port, CSERIAL_LINE_FLAG_ALL );
-
-    status = c_serial_open( m_port );
-    if( status < 0 ){
-        fprintf( stderr, "ERROR: Can't open serial port\n" );
-        return false;
-    }
     return true;
 }
 
 int write_json_string( char *json_string ){
-  status = c_serial_write_data( m_port, json_string, &data_length);
-  if( status < 0 )
-    printf("error writing to port\n");
-  printf("wrote %d bytes to port\n",strlen(json_string));
+  int rc = serialport_write(fd, json_string);
+  if( rc < 0 ){
+    if(DEBUG_JOYSTICK_CHANNELS)
+      printf("error writing to port\n");
+    return(-1);
+  }else{
+    if(DEBUG_JOYSTICK_CHANNELS)
+       printf("wrote %d bytes to port:\t%s\n",strlen(json_string),json_string);
+  }
   return(strlen(json_string));
 }
 

@@ -5,9 +5,10 @@
 #include <unistd.h>
 #include <unistd.h>
 #include <termios.h>
-#define PORT "/dev/ttyUSB0"
+#define PORT1 "/dev/ttyUSB0"
+#define PORT "/dev/cu.usbserial-A601EGHU"
 #define BAUD 115200
-#define DATA "{\"pitch\": 1898, \"yaw\": 996, \"roll\": 0, \"throttle\": 1000,\"button0\": 0}\n"
+#define DATA "{\"pitch\": 0, \"roll\": 0, \"yaw\": 0, \"throttle\": 0, \"button0\": 0}\n"
 
 
 int writeToSerialPort(const char* portPath, const char* data, speed_t baudRate);
@@ -43,7 +44,7 @@ int writeToSerialPort(const char* portPath, const char* data, speed_t baudRate) 
         return -1;
     }
 
-    printf("Successfully wrote %zd bytes to serial port.\n", bytesWritten);
+    printf("Successfully wrote %zd bytes to serial port: %s.\n", bytesWritten,DATA);
     return 0;
 }
 
