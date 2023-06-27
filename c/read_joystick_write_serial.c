@@ -19,14 +19,13 @@
 void print_devs(libusb_device **devs);
 void monitor_usb(void);
 int scale_value(int value);
-void ensure_root(void);
+bool ensure_root(void);
 int write_json_string(char *json_string);
 bool setup_serial_port(void);
 
-//c_serial_port_t* m_port;
-//c_serial_control_lines_t m_lines;
 int status, bytes_read, data_length, x;
 char serial_port[1024];
+int serial_port_descriptor = 0;
  
 int main(int argc, const char * argv[]){
     libusb_device **devs;
@@ -55,7 +54,11 @@ int main(int argc, const char * argv[]){
     libusb_free_device_list(devs, 1);
     libusb_exit(NULL);
 
-    ensure_root();
+    if(!ensure_root()){
+	fprintf(stderr, "Must be run as root\n");
+	exit(1);
+    }
+
     if(!setup_serial_port()){
 	printf("Error setting up serial port");
 	return 1;
@@ -102,25 +105,21 @@ void monitor_usb(void) {
     return 0;
 }
 
-void ensure_root(void){
-	if (geteuid() != 0) {
-	    fprintf(stderr, "Must be run as root\n");
-	    exit(1);
-	}
+bool ensure_root(void){
+  return(geteuid() == 0));
 }
-int fd = 0;
+
+
 
 bool setup_serial_port(){
 
     char serialport[256];
-    int baudrate = B115200;  // default
+    int baudrate = B115200;
     char buf[256];
     int rc,n;
 
-char *s = "{\"pitch\": 1984, \"yaw\": 925, \"roll\": 1200, \"throttle\": 1500,\"button0\": 0}\n";
-
-    fd = serialport_init(serial_port, baudrate);
-    if(fd==-1) return -1;
+    serial_port_descriptor = serialport_init(serial_port, baudrate);
+    if(serial_port_descriptor= = -1) return -1;
     printf("enabling serial port\n");
     delay(2000);
     printf("serial port ready\n");
@@ -129,7 +128,7 @@ char *s = "{\"pitch\": 1984, \"yaw\": 925, \"roll\": 1200, \"throttle\": 1500,\"
 }
 
 int write_json_string( char *json_string ){
-  int rc = serialport_write(fd, json_string);
+  int rc = serialport_write(serial_port_descriptor, json_string);
   if( rc < 0 ){
     if(DEBUG_JOYSTICK_CHANNELS)
       printf("error writing to port\n");
