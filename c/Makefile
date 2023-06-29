@@ -1,7 +1,10 @@
 pi-setup:
-	sudo apt install libhidapi-dev libusb-1.0-0-dev
+	sudo apt install libhidapi-dev libusb-1.0-0-dev wiringpi
 	wget https://github.com/WiringPi/WiringPi/releases/download/2.61-1/wiringpi-2.61-1-arm64.deb
 	sudo dpkg -i wiringpi-2.61-1-arm64.deb
+#wget https://github.com/WiringPi/WiringPi/releases/download/2.61-1/wiringpi-2.61-1-armhf.deb
+#sudo dpkg -i wiringpi-2.61-1-armhf.deb
+
 
 pi:
 	gcc joystick.c -o joystick \
