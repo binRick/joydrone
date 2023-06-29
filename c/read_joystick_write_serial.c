@@ -106,7 +106,7 @@ void monitor_usb(void) {
 }
 
 bool ensure_root(void){
-  return(geteuid() == 0));
+  return(geteuid() == 0);
 }
 
 
@@ -119,7 +119,7 @@ bool setup_serial_port(){
     int rc,n;
 
     serial_port_descriptor = serialport_init(serial_port, baudrate);
-    if(serial_port_descriptor= = -1) return -1;
+    if(serial_port_descriptor == -1) return -1;
     printf("enabling serial port\n");
     delay(2000);
     printf("serial port ready\n");
