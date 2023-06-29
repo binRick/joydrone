@@ -1,7 +1,7 @@
 pi-setup:
 	sudo apt install libhidapi-dev
 	wget https://github.com/WiringPi/WiringPi/releases/download/2.61-1/wiringpi-2.61-1-arm64.deb
-	dpkg -i wiringpi-2.61-1-arm64.deb
+	sudo dpkg -i wiringpi-2.61-1-arm64.deb
 
 pi:
 	gcc joystick.c -o joystick \
